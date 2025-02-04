@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>局域网文件传输</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="static/style.css">
+
+</head>
+
+<body>
+    <h1>局域网文件传输</h1>
+
+    <div class="drop-zone" id="dropZone">
+        <div class="upload-area">
+            <div class="upload-icon">📤</div>
+            <div class="upload-text">拖放文件到这里或点击选择文件</div>
+            <div class="upload-buttons">
+                <button class="upload-btn" onclick="handleFileButtonClick(event)">
+                    <span class="btn-icon">📁</span>
+                    选择文件
+                </button>
+                <button class="upload-btn folder-btn" onclick="handleFolderButtonClick(event)">
+                    <span class="btn-icon">📂</span>
+                    选择文件夹
+                </button>
+            </div>
+            <input type="file" multiply id="fileInput" multiple style="display: none">
+            <input type="file" multiply id="folderInput" webkitdirectory directory multiple style="display: none">
+        </div>
+    </div>
+    <div id="uploadProgress" class="upload-progress"></div>
+
+    <div class="file-list" id="fileList"></div>
+    <div class="search-container">
+        <input type="text" id="searchInput" placeholder="搜索文件或文件夹..." oninput="searchFiles()">
+        <select id="searchType">
+            <option value="name">按名称</option>
+            <option value="type">按类型</option>
+            <option value="size">按大小</option>
+        </select>
+    </div>
+
+    <div class="folder-structure" id="folderStructure"></div>
+    <div id="fileTableContainer"></div>
+
+    <!-- 文件预览模态框 -->
+<div id="filePreviewModal" class="modal">
+    <div class="modal-content">
+        <span class="close-btn" onclick="closeModal()">&times;</span>
+        <iframe id="filePreviewIframe" src="" frameborder="0"></iframe>
+    </div>
+</div>
+
+<!-- Monaco Editor 容器 -->
+<div id="monacoContainer" style="display:none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5);">
+    <div style="background: white; width: 90%; height: 90%; margin: 2.5% auto; border-radius: 10px; overflow: hidden;">
+        <div style="display: flex; justify-content: space-between; padding: 10px; background: #f0f0f0;">
+            <span id="monacoFileName"></span>
+            <button onclick="closeMonacoEditor()" style="background: none; border: none; font-size: 20px; cursor: pointer;">×</button>
+        </div>
+        <div id="monaco-editor" style="height: calc(100% - 50px);"></div>
+    </div>
+</div>
+<script>
+    {{jsTemplate}}
+</script>
+<!-- Monaco Editor 脚本 -->
+<script src="https://cdn.jsdelivr.net/npm/monaco-editor@0.43.0/min/vs/loader.js"></script>
+<script>
+(function() {
+    // 配置 Monaco Editor 路径
+    window.MonacoEnvironment = {
+        getWorkerUrl: function(moduleId, label) {
+            if (label === 'json') {
+                return 'https://cdn.jsdelivr.net/npm/monaco-editor@0.43.0/min/vs/language/json/jsonWorker.js';
+            }
+            if (label === 'css' || label === 'scss' || label === 'less') {
+                return 'https://cdn.jsdelivr.net/npm/monaco-editor@0.43.0/min/vs/language/css/cssWorker.js';
+            }
+            if (label === 'html') {
+                return 'https://cdn.jsdelivr.net/npm/monaco-editor@0.43.0/min/vs/language/html/htmlWorker.js';
+            }
+            if (label === 'typescript' || label === 'javascript') {
+                return 'https://cdn.jsdelivr.net/npm/monaco-editor@0.43.0/min/vs/language/typescript/tsWorker.js';
+            }
+            return 'https://cdn.jsdelivr.net/npm/monaco-editor@0.43.0/min/vs/editor/editor.main.js';
+        }
+    };
+
+    // 加载 Monaco Editor
+    require.config({
+        paths: {
+            'vs': 'https://cdn.jsdelivr.net/npm/monaco-editor@0.43.0/min/vs'
+        }
+    });
+
+    let monacoEditor = null;
+
+    function initMonacoEditor() {
+        require(['vs/editor/editor.main'], function() {
+            monacoEditor = monaco.editor.create(document.getElementById('monaco-editor'), {
+                language: 'javascript',
+                theme: 'vs-light',
+                automaticLayout: true,
+                readOnly: true,
+                minimap: {
+                    enabled: false
+                }
+            });
+        });
+    }
+
+    function openMonacoEditor(content, language, fileName) {
+        if (!monacoEditor) {
+            initMonacoEditor();
+        }
+
+        // 延迟确保编辑器已初始化
+        setTimeout(() => {
+            document.getElementById('monacoFileName').textContent = fileName;
+            document.getElementById('monacoContainer').style.display = 'block';
+
+            monacoEditor.setValue(content);
+            monaco.editor.setModelLanguage(monacoEditor.getModel(), language);
+        }, 200);
+    }
+
+    function closeMonacoEditor() {
+        document.getElementById('monacoContainer').style.display = 'none';
+        if (monacoEditor) {
+            monacoEditor.setValue('');
+        }
+    }
+
+    // 将函数暴露到全局作用域
+    window.openMonacoEditor = openMonacoEditor;
+    window.closeMonacoEditor = closeMonacoEditor;
+
+    // 初始化 Monaco Editor
+    initMonacoEditor();
+})();
+</script>
+</body>
+
+</html>
