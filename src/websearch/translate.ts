@@ -2,7 +2,7 @@ import { createHash } from 'crypto';
 import { request } from 'http';
 import chalk from 'chalk';
 import fs from 'fs/promises';
-import path from 'path';
+import path, { join } from 'path';
 import readline from 'readline';
 import { log } from 'console';
 
@@ -37,7 +37,8 @@ function isChineseOrEnglish(str: string): 'chinese' | 'english' | 'mixed' {
 }
 
 export async function handleSetTranslateKey() {
-    const configPath = path.join(process.cwd(), 'translate.txt');
+    const configDir = join(process.env.HOME || process.env.USERPROFILE || '', '.my-cli');
+    const configPath = path.join(configDir, 'translate.txt');
     
     let text ='';
     if(process.argv.indexOf('--to')!==-1&&process.argv.indexOf('--to')>3){
@@ -73,7 +74,8 @@ export async function handleSetTranslateKey() {
 }
 
 export async function handleTranslateSet() {
-    const configPath = path.join(process.cwd(), 'translate.txt');
+    const configDir = join(process.env.HOME || process.env.USERPROFILE || '', '.my-cli');
+    const configPath = path.join(configDir, 'translate.txt');
 
     const rl = readline.createInterface({
         input: process.stdin,
@@ -83,7 +85,8 @@ export async function handleTranslateSet() {
     const question = (query: string): Promise<string> => {
         return new Promise((resolve) => {
             rl.question(query, (answer) => {
-                resolve(answer);
+                // 直接在这里处理输入，避免后续再次处理
+                resolve(answer.trim());
             });
         });
     };
@@ -95,14 +98,14 @@ export async function handleTranslateSet() {
         let secret = '';
 
         while (!appId) {
-            appId = (await question('请输入 APP ID: ')).trim();
+            appId = await question('请输入 APP ID: ');  // 移除这里的 trim()
             if (!appId) {
                 console.log(chalk.red('APP ID 不能为空！'));
             }
         }
 
         while (!secret) {
-            secret = (await question('请输入密钥: ')).trim();
+            secret = await question('请输入密钥: ');  // 移除这里的 trim()
             if (!secret) {
                 console.log(chalk.red('密钥不能为空！'));
             }

@@ -408,7 +408,7 @@ program
 
 
         await handleSetTranslateKey();
-        process.exit(0);
+   
     });
 
 
