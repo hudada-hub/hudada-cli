@@ -5,6 +5,7 @@ import fs from 'fs/promises';
 import path, { join } from 'path';
 import readline from 'readline';
 import { log } from 'console';
+import inquirer from 'inquirer';
 
 function md5(text: string): string {
     return createHash('md5').update(text).digest('hex');
@@ -77,43 +78,27 @@ export async function handleTranslateSet() {
     const configDir = join(process.env.HOME || process.env.USERPROFILE || '', '.my-cli');
     const configPath = path.join(configDir, 'translate.txt');
 
-    const rl = readline.createInterface({
-        input: process.stdin,
-        output: process.stdout
-    });
-
-    const question = (query: string): Promise<string> => {
-        return new Promise((resolve) => {
-            rl.question(query, (answer) => {
-                // 直接在这里处理输入，避免后续再次处理
-                resolve(answer.trim());
-            });
-        });
-    };
-
     try {
         console.log(chalk.cyan('请配置百度翻译 API 参数：'));
 
-        let appId = '';
-        let secret = '';
-
-        while (!appId) {
-            appId = await question('请输入 APP ID: ');  // 移除这里的 trim()
-            if (!appId) {
-                console.log(chalk.red('APP ID 不能为空！'));
+        const answers = await inquirer.prompt([
+            {
+                type: 'input',
+                name: 'appId',
+                message: '请输入 APP ID:',
+                validate: (input) => input.trim() !== '' || 'APP ID 不能为空！'
+            },
+            {
+                type: 'input',
+                name: 'secret',
+                message: '请输入密钥:',
+                validate: (input) => input.trim() !== '' || '密钥不能为空！'
             }
-        }
-
-        while (!secret) {
-            secret = await question('请输入密钥: ');  // 移除这里的 trim()
-            if (!secret) {
-                console.log(chalk.red('密钥不能为空！'));
-            }
-        }
+        ]);
 
         const config = {
-            BAIDU_APP_ID: appId,
-            BAIDU_SECRET: secret
+            BAIDU_APP_ID: answers.appId,
+            BAIDU_SECRET: answers.secret
         };
 
         await fs.writeFile(configPath, JSON.stringify(config, null, 2));
@@ -121,8 +106,6 @@ export async function handleTranslateSet() {
 
     } catch (error) {
         console.error(chalk.red('配置保存失败:', error));
-    } finally {
-        rl.close();
     }
 }
 
@@ -218,6 +201,7 @@ export async function translate(text: string, config: TranslateConfig) {
         const result = response.trans_result[0];
         console.log(chalk.green(`原文: ${result.src}`));
         console.log(chalk.blue(`译文: ${result.dst}`));
+        process.exit(0);
 
     } catch (error: any) {
         console.error(chalk.red(`翻译失败: ${error.message}`));

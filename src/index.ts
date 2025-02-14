@@ -1,4 +1,4 @@
-import { Argument, Command } from 'commander';
+import { Argument, Command, Option } from 'commander';
 import chalk from 'chalk';
 import { readFileSync, readdirSync, existsSync, statSync, appendFileSync, mkdirSync, writeFileSync } from 'fs';
 
@@ -43,11 +43,25 @@ import { base64String } from './base64';
 import { getRandomComment } from './comment';
 import { cleanNodeModules } from './cleanModules';
 import { installDependencies } from './npmInstall';
+import { log } from 'console';
+
+
+import { promisify } from 'util';
+import { pipeline } from 'stream';
+
+
+import { Readable } from 'stream';
+import { exec } from 'child_process';
+import { handleWordSearch } from './word';
+import { displayHistory, clearHistory } from './history';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 // @ts-ignore
 marked.use(markedTerminal({}));
+
+
+const streamPipeline = promisify(pipeline);
 
 //
 //                            _ooOoo_
@@ -731,9 +745,10 @@ program
     .description('在 NPM 搜索包\n' +
         '  - 搜索包名\n' +
         '  - 查看包信息\n' +
-        '  - 查看包文档')
-    .action(async (keyword) => {
-        await handleNpmSearch(keyword);
+        '  - 查看包文档').addOption(new Option('-p, --package', '打开具体包')) 
+    .action(async (keyword, options) => {
+       
+        await handleNpmSearch(keyword,options);
         
     });
 
@@ -870,6 +885,37 @@ program
     
     await handleAi(prompt);
 });
+
+
+
+program
+    .command('w')
+    .description('单词查询和管理')
+    .argument('[word]', '要查询的单词')
+    .option('-p, --play', '播放美式发音')
+    .option('-u, --uk', '播放英式发音')
+    .action(async (word, options) => {
+        if (!word) {
+            console.log(chalk.yellow('请输入要查询的单词'));
+            return;
+        }
+        
+        if (word === 'list') {
+            displayHistory();
+            process.exit(0);
+            return;
+        }
+        
+        if (word === 'clear') {
+            clearHistory();
+            process.exit(0);
+            return;
+        }
+
+        await handleWordSearch(word, options);
+        process.exit(0);
+    });
+
 program.parse();
 
 

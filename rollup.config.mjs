@@ -117,6 +117,10 @@ export default [
           {
             src: 'src/comment',
             dest: 'dist'
+          },
+          {
+            src: 'src/cmdmp3.exe',
+            dest: 'dist'
           }
         ]
       })

@@ -125,9 +125,15 @@ export async function handleHttpUrlPrivate(url: string) {
     }
 }
 
-export async function handleNpmSearch(keyword: string) {
+export async function handleNpmSearch(keyword: string,option) {
     try {
-        const searchUrl = `https://www.npmjs.com/search?q=${encodeURIComponent(keyword)}`;
+        let searchUrl =''
+        if(option.package){
+            searchUrl = `https://www.npmjs.com/package/${encodeURIComponent(keyword)}`;
+        }else{
+            searchUrl = `https://www.npmjs.com/search?q=${encodeURIComponent(keyword)}`;
+        }
+     
         console.log(chalk.green(`正在打开 npm 搜索: ${keyword}`));
          open(searchUrl);
     } catch (error: any) {
